@@ -13,6 +13,11 @@
       apt:
         upgrade: dist
 
+    - name: Install build essential
+      apt:
+        name: build-essential
+        state: present
+
     - name: Install docker
       apt:
         name: docker.io
