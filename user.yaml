@@ -1,0 +1,127 @@
+---
+- name: Create java / openai environment
+  hosts: all
+  become: true
+  become_user: root
+
+  tasks:
+    - name: Update the apt package cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade all packages to the latest version
+      apt:
+        upgrade: dist
+
+    - name: Install docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Install xdg
+      apt:
+        name: xdg-utils
+        state: present
+
+    - name: Create ubuntu user
+      user:
+        name: ubuntu
+        password: '$6$maxv8KLiUHw9tnLw$rOZPEb6YUkH0k1hWU1YUxpL8p0TT8SaLnYLxcxDBfmbRB39AaSt6Jol8V7/YaHqSvFw0WPLj1IYkRrShCnijm/'
+        state: present
+        group: docker
+        groups: sudo,kvm
+        append: yes
+        shell: /bin/bash
+
+    - name: Ensure the .Xauthority file exists
+      become: true
+      become_user: ubuntu
+      file:
+        path: /home/ubuntu/.Xauthority
+        state: touch
+        owner: ubuntu
+        mode: '0600'
+
+
+    - name: Install docker-compose
+      become: true
+      become_user: ubuntu
+      shell: wget https://github.com/docker/compose/releases/download/v2.31.0/docker-compose-linux-x86_64 -P /home/ubuntu && chmod +x /home/ubuntu/docker-compose-linux-x86_64
+      args:
+        executable: /bin/bash
+
+    - name: move docker-compose file
+      shell: mv /home/ubuntu/docker-compose-linux-x86_64 /usr/local/bin/docker-compose
+      args:
+        executable: /bin/bash
+
+    - name: Add OpenAI API key to .bashrc
+      become: true
+      become_user: ubuntu
+      lineinfile:
+        path: "/home/ubuntu/.bashrc"
+        regexp: '^export OPENAI_API_KEY='
+        line: 'export OPENAI_API_KEY=YOUR_OPENAI_API_KEY'
+        create: yes
+        state: present
+        owner: "ubuntu"
+        mode: '0644'
+
+    - name: Create ~/.ssh directory
+      become: true
+      become_user: ubuntu
+      file:
+        path: ~/.ssh
+        state: directory
+        mode: 0700
+
+    - name: Create authorized keys
+      become: true
+      become_user: ubuntu
+      copy:
+        content: |
+          your-public-ssh-key-content
+        dest: ~/.ssh/authorized_keys
+        mode: 0600
+
+    - name: Install unzip
+      apt:
+        name: unzip
+        state: present
+
+    - name: Install zip
+      apt:
+        name: zip
+        state: present
+
+    - name: Install intellij
+      become: true
+      become_user: ubuntu
+      shell: wget https://download.jetbrains.com/idea/ideaIU-2024.3.tar.gz -P /home/ubuntu && cd /home/ubuntu && tar xf ideaIU-2024.3.tar.gz
+      args:
+        executable: /bin/bash
+
+    - name: Install sdkman
+      become: true
+      become_user: ubuntu
+      shell: curl -s "https://get.sdkman.io" | bash
+      args:
+        executable: /bin/bash
+
+    - name: Install java
+      become: true
+      become_user: ubuntu
+      shell: source "/home/ubuntu/.sdkman/bin/sdkman-init.sh" && sdk install java 17.0.13-tem
+      args:
+        executable: /bin/bash
+
+    - name: Create git config file
+      become: true
+      become_user: ubuntu
+      copy:
+        content: |
+          [user]
+          email = your-email@address.com
+          name = your-user-name
+        dest: ~/.gitconfig
+        mode: 0600
